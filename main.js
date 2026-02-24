@@ -13,7 +13,21 @@ function choice(arr) {
 class PlayScene extends Phaser.Scene {
   constructor() { super("Play"); }
 
-  create() {
+  create(// RESET text
+this.resetText = this.add.text(WIDTH / 2, HEIGHT / 2 - 40, "RESET", {
+  fontFamily: "monospace",
+  fontSize: "22px",
+  color: "#ffffff"
+}).setOrigin(0.5).setAlpha(0).setDepth(1001);
+
+// Stay Steady flash text
+this.steadyFlash = this.add.text(WIDTH / 2, HEIGHT - 60, "Stay Steady", {
+  fontFamily: "monospace",
+  fontSize: "18px",
+  color: "#66e0ff"
+}).setOrigin(0.5).setAlpha(0).setDepth(1001);
+
+this.invulnerable = false;) {
     this.score = 0;
 
     // UI
@@ -84,10 +98,11 @@ class PlayScene extends Phaser.Scene {
     this.steadyText.setAlpha(0);
     this.steadyText.setDepth(1001);
 
-    // If hog hits player → Steady Mode
-    this.physics.add.overlap(this.player, this.hog, () => {
-      if (!this.isSteadyMode) {
-        this.triggerSteadyMode("Reset.");
+    // this.physics.add.overlap(this.player, this.hog, () => {
+  if (!this.isSteadyMode && !this.invulnerable) {
+    this.triggerSteadyMode();
+  }
+});
       }
     });
 
@@ -163,41 +178,83 @@ class PlayScene extends Phaser.Scene {
     this.scheduleNextCharge();
   }
 
-  triggerSteadyMode(message) {
-    this.isSteadyMode = true;
+  triggerSteadyMode() {
+  if (this.isSteadyMode) return;
 
-    // Stop player + hog immediately
-    this.player.body.setVelocity(0, 0);
-    this.hog.body.setVelocity(0, 0);
+  this.isSteadyMode = true;
 
-    // Clear charge visuals
-    this.chargeTint.setFillStyle(0xff0000, 0.0);
-    this.msgText.setText(message);
+  // Stop movement immediately
+  this.player.body.setVelocity(0, 0);
+  this.hog.body.setVelocity(0, 0);
 
-    // Show overlay
-    this.overlay.setFillStyle(0x000000, 0.45);
-    this.breathCircle.setAlpha(0.9);
-    this.steadyText.setAlpha(1);
+  this.chargeTint.setFillStyle(0xff0000, 0.0);
 
-    // Breathing animation (3 seconds)
-    this.breathCircle.setRadius(10);
-    this.tweens.add({
-      targets: this.breathCircle,
-      radius: 48,
-      duration: 1500,
-      yoyo: true,
-      ease: "Sine.easeInOut",
-      onComplete: () => this.endSteadyMode()
-    });
-  }
+  // Show overlay + RESET text
+  this.overlay.setFillStyle(0x000000, 0.45);
+  this.resetText.setAlpha(1);
 
+  this.breathCircle.setAlpha(0.9);
+  this.breathCircle.setRadius(10);
+
+  // Physiological sigh animation
+  this.tweens.timeline({
+    targets: this.breathCircle,
+    tweens: [
+      { radius: 36, duration: 600, ease: "Sine.easeOut" },   // inhale 1
+      { radius: 48, duration: 600, ease: "Sine.easeOut" },   // inhale 2
+      { radius: 12, duration: 1600, ease: "Sine.easeInOut" } // long exhale
+    ],
+    onComplete: () => {
+      // Remain in reset until movement OR 10s max
+    }
+  });
+
+  // Auto-end after 10 seconds max
+  this.time.delayedCall(10000, () => {
+    if (this.isSteadyMode) this.endSteadyMode();
+  });
+
+  // End early if player touches
+  this.input.once("pointerdown", () => {
+    if (this.isSteadyMode) this.endSteadyMode();
+  });
+}
+  });
+
+  // Auto-end after 10 seconds max
+  this.time.delayedCall(10000, () => {
+    if (this.isSteadyMode) this.endSteadyMode();
+  });
+
+  // End early if player touches
+  this.input.once("pointerdown", () => {
+    if (this.isSteadyMode) this.endSteadyMode();
+  });
+}
+  
   endSteadyMode() {
-    this.isSteadyMode = false;
-    this.overlay.setFillStyle(0x000000, 0.0);
-    this.breathCircle.setAlpha(0.0);
-    this.steadyText.setAlpha(0.0);
-    this.msgText.setText("");
-  }
+  this.isSteadyMode = false;
+
+  // Hide reset visuals
+  this.overlay.setFillStyle(0x000000, 0.0);
+  this.resetText.setAlpha(0);
+  this.breathCircle.setAlpha(0);
+
+  // Flash Stay Steady
+  this.steadyFlash.setAlpha(1);
+  this.tweens.add({
+    targets: this.steadyFlash,
+    alpha: 0,
+    duration: 800,
+    ease: "Sine.easeOut"
+  });
+
+  // 2-second invulnerability window
+  this.invulnerable = true;
+  this.time.delayedCall(2000, () => {
+    this.invulnerable = false;
+  });
+}
 
   update() {
     if (this.isSteadyMode) return;
