@@ -118,31 +118,26 @@ class PlayScene extends Phaser.Scene {
   }
 
   startCharge() {
-    if (this.chargeActive || this.isReset) return;
-    this.chargeActive = true;
+  if (this.chargeActive || this.isReset) return;
+  this.chargeActive = true;
 
-    // Quiet friction: subtle tint + slight speed lift
-    this.chargeTint.setFillStyle(0xff0000, 0.10);
-    this.speed = this.speedBase + 40;
+  // Quiet friction: subtle tint + slight speed lift
+  this.chargeTint.setFillStyle(0xff0000, 0.10);
+  this.speed = this.speedBase + 40;
 
-    const side = choice(["left", "right", "top", "bottom"]);
-    const hogSpeed = 420;
+  // TEST MODE: always charge through the center line
+  const hogSpeed = 420;
 
-    let x, y, vx, vy;
-    if (side === "left") {
-      x = -30; y = Phaser.Math.Between(80, HEIGHT - 40);
-      vx = hogSpeed; vy = 0;
-    } else if (side === "right") {
-      x = WIDTH + 30; y = Phaser.Math.Between(80, HEIGHT - 40);
-      vx = -hogSpeed; vy = 0;
-    } else if (side === "top") {
-      x = Phaser.Math.Between(40, WIDTH - 40); y = -30;
-      vx = 0; vy = hogSpeed;
-    } else {
-      x = Phaser.Math.Between(40, WIDTH - 40); y = HEIGHT + 30;
-      vx = 0; vy = -hogSpeed;
-    }
+  // Start left, go right through middle
+  const x = -30;
+  const y = HEIGHT / 2;
 
+  this.hog.setPosition(x, y);
+  this.hog.body.setVelocity(hogSpeed, 0);
+
+  // End after 1.6s
+  this.time.delayedCall(1600, () => this.endCharge());
+}
     this.hog.setPosition(x, y);
     this.hog.body.setVelocity(vx, vy);
 
