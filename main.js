@@ -1,5 +1,4 @@
-CYNIK // VERSION: 6  (Apples + Hog Charge + Steady Mode)
-
+// VERSION: 6  (Apples + Hog Charge + Steady Mode)
 
 const WIDTH = 640;
 const HEIGHT = 640;
